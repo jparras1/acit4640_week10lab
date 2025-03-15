@@ -120,16 +120,15 @@ resource "aws_vpc_security_group_egress_rule" "web-egress" {
 
 # create the ec2 instance
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance
-resource "aws_instance" "web" {
-  ami                    = data.aws_ami.ansible-name.id
-  instance_type          = "t2.micro"
-  key_name               = "aws-4640"
-  vpc_security_group_ids = [aws_security_group.web.id]
-  subnet_id              = aws_subnet.web.id
+module "web_server" {
+  source = "./modules/web-server"
 
-  tags = {
-    Name = "Web"
-  }
+  project_name      = "Web"
+  aws_ami           = data.aws_ami.ansible-nginx.id
+  instance_type     = "t2.micro"
+  key_name          = "aws-4640"
+  security_group_id = [aws_security_group.web.id]
+  subnet_id         = aws_subnet.web.id
 }
 
 # print public ip and dns to terminal
@@ -137,8 +136,9 @@ resource "aws_instance" "web" {
 output "instance_ip_addr" {
   description = "The public IP and dns of the web ec2 instance."
   value = {
-    "public_ip" = aws_instance.web.public_ip
-    "dns_name"  = aws_instance.web.public_dns
+    "public_ip"   = module.web_server.public_ip
+    "dns_name"    = module.web_server.public_dns
+    "instance_id" = module.web_server.instance_id
   }
 }
 
